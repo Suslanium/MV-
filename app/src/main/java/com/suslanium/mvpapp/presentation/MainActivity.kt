@@ -5,14 +5,16 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.ViewModelProvider
 import com.suslanium.mvpapp.R
 import com.suslanium.mvpapp.databinding.ActivityMainBinding
+import com.suslanium.mvpapp.domain.entity.FormatResult
 
-class MainActivity : AppCompatActivity(), PhoneScreen {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
-    private lateinit var presenter: PhonePresenter
+    private lateinit var viewModel: PhoneViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,23 +27,18 @@ class MainActivity : AppCompatActivity(), PhoneScreen {
             insets
         }
 
-        presenter = PhonePresenter(phoneScreen = this)
-        binding.submitButton.setOnClickListener {
-            presenter.formatPhone(binding.phoneEditText.text.toString())
+        viewModel = ViewModelProvider(this)[PhoneViewModel::class.java]
+
+        viewModel.formatResult.observe(this) { formatResult ->
+            binding.phoneText.text = when(formatResult) {
+                FormatResult.Error -> resources.getString(R.string.invalid_format)
+                is FormatResult.Phone -> formatResult.phone
+            }
         }
-    }
 
-    override fun onDestroy() {
-        presenter.onDestroy()
-        super.onDestroy()
-    }
-
-    override fun setPhoneText(phone: String) {
-        binding.phoneText.text = phone
-    }
-
-    override fun showPhoneFormatError() {
-        binding.phoneText.text = resources.getString(R.string.invalid_format)
+        binding.submitButton.setOnClickListener {
+            viewModel.formatPhone(binding.phoneEditText.text.toString())
+        }
     }
 
 }
